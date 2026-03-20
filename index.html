@@ -3,20 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Ton Mini App - Pro</title>
+    <title>Ton Roulette PvP</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         :root {
+            --bg: #0f1115;
+            --sec-bg: #1a1d23;
             --primary: #2481cc;
-            --bg: var(--tg-theme-bg-color, #1a1a1a);
-            --text: var(--tg-theme-text-color, #ffffff);
-            --sec-bg: var(--tg-theme-secondary-bg-color, #2c2c2e);
-            --accent: #00d1ff;
+            --pink: #e940d3;
+            --cyan: #3cd3c1;
+            --text: #ffffff;
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            font-family: -apple-system, sans-serif;
             background-color: var(--bg);
             color: var(--text);
             margin: 0; padding: 0;
@@ -24,90 +25,80 @@
             overflow: hidden;
         }
 
-        /* Хедер с плюсиком */
-        .header {
-            background: var(--sec-bg);
+        /* Хедер из скриншота */
+        .game-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             padding: 15px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            border-bottom: 1px solid #333;
-            gap: 10px;
+            background: var(--bg);
         }
-        .balance-container {
-            background: rgba(0,0,0,0.3);
-            padding: 5px 15px;
-            border-radius: 20px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
+        .pot-badge {
+            background: #1a1d23;
+            padding: 8px 20px;
+            border-radius: 12px;
             font-weight: bold;
-            font-size: 18px;
+            font-size: 14px;
+            color: #8e8e93;
         }
-        .add-funds {
-            background: var(--primary);
+        .pot-badge span { color: #50a1e3; }
+
+        .icon-btn {
+            background: #1a1d23;
+            border: none;
             color: white;
-            width: 24px; height: 24px;
-            border-radius: 50%;
+            width: 40px; height: 40px;
+            border-radius: 10px;
             display: flex; align-items: center; justify-content: center;
-            cursor: pointer; font-size: 18px;
         }
 
-        #content {
-            height: calc(100vh - 140px);
-            overflow-y: auto;
-            padding: 15px;
-            box-sizing: border-box;
+        /* Колесо */
+        .wheel-container {
+            position: relative;
+            width: 320px;
+            height: 320px;
+            margin: 20px auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
-        /* Модалка кошелька */
-        .modal {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.85);
-            z-index: 100; display: none;
-            align-items: center; justify-content: center;
+        #wheel-svg {
+            width: 100%;
+            height: 100%;
+            transform: rotate(-90deg);
+            transition: transform 5s cubic-bezier(0.15, 0, 0.15, 1);
         }
-        .modal-content {
-            background: var(--sec-bg);
-            width: 90%; border-radius: 20px; padding: 20px;
-            box-sizing: border-box; text-align: center;
-        }
-        .wallet-tabs { display: flex; gap: 10px; margin-top: 20px; }
-        .w-tab { flex: 1; padding: 10px; background: #444; border-radius: 10px; cursor: pointer; }
-        .w-tab.active { background: var(--primary); }
 
-        /* Колесо рулетки */
-        .roulette-box { position: relative; width: 260px; height: 260px; margin: 20px auto; }
-        #wheel {
-            width: 100%; height: 100%;
+        .center-timer {
+            position: absolute;
+            width: 100px;
+            height: 100px;
+            background: #000;
             border-radius: 50%;
-            border: 5px solid #444;
-            transition: transform 4s cubic-bezier(0.15, 0, 0.15, 1);
-            background: conic-gradient(
-                #2481cc 0deg 45deg, #1a1a1a 45deg 90deg, 
-                #2481cc 90deg 135deg, #1a1a1a 135deg 180deg,
-                #2481cc 180deg 225deg, #1a1a1a 225deg 270deg,
-                #2481cc 270deg 315deg, #1a1a1a 315deg 360deg
-            );
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
         }
-        .pointer {
-            position: absolute; top: -10px; left: 50%; transform: translateX(-50%);
-            width: 0; height: 0; 
-            border-left: 15px solid transparent; border-right: 15px solid transparent;
-            border-top: 25px solid #ff4b4b; z-index: 10;
+        .timer-val { font-size: 24px; font-weight: bold; }
+        .pointer-top {
+            position: absolute;
+            top: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0; height: 0;
+            border-left: 12px solid transparent;
+            border-right: 12px solid transparent;
+            border-bottom: 20px solid white; /* Перевернутый треугольник как на скрине */
+            z-index: 11;
         }
 
-        /* Инвентарь */
-        .inventory-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-        .inv-item { background: var(--sec-bg); padding: 10px; border-radius: 10px; text-align: center; font-size: 12px; }
-        .inv-item i { display: block; margin-bottom: 5px; color: var(--accent); }
-
-        /* Кнопки и прочее */
-        .menu-btn {
-            background: var(--primary); color: #fff; border: none;
-            width: 100%; padding: 15px; border-radius: 12px;
-            margin-bottom: 10px; font-size: 16px; font-weight: bold;
-        }
+        /* Инвентарь и вкладки */
+        #content { height: calc(100vh - 140px); overflow-y: auto; padding: 15px; }
+        
         .nav {
             position: fixed; bottom: 0; width: 100%; height: 70px;
             background: var(--sec-bg); display: flex; justify-content: space-around;
@@ -119,246 +110,204 @@
             color: #8e8e93; font-size: 11px; text-decoration: none;
         }
         .nav-item.active { color: var(--primary); }
+
+        .bet-controls {
+            padding: 20px;
+            background: var(--sec-bg);
+            border-radius: 20px 20px 0 0;
+            position: fixed; bottom: 70px; width: 100%;
+            box-sizing: border-box;
+        }
+
+        .main-btn {
+            background: var(--primary);
+            color: white; border: none;
+            width: 100%; padding: 15px;
+            border-radius: 12px; font-weight: bold; font-size: 16px;
+        }
+
+        /* Аватарки на круге */
+        .player-avatar {
+            width: 30px; height: 30px;
+            border-radius: 50%;
+            border: 2px solid white;
+            position: absolute;
+            transition: all 0.3s;
+        }
+
         .hidden { display: none; }
-        input { width: 100%; padding: 10px; margin: 10px 0; border-radius: 8px; border: none; background: #444; color: white; }
     </style>
 </head>
 <body>
 
-    <div class="header">
-        <div class="balance-container">
-            💎 <span id="bal">100.00</span>
-            <div class="add-funds" onclick="openWallet()">+</div>
+    <div id="game-ui">
+        <div class="game-header">
+            <button class="icon-btn"><i data-lucide="history"></i></button>
+            <div class="pot-badge">ВСЕГО <span id="total-pot">0</span> <span>TON</span></div>
+            <button class="icon-btn"><i data-lucide="message-circle"></i></button>
+        </div>
+
+        <div class="wheel-container">
+            <div class="pointer-top"></div>
+            <div class="center-timer">
+                <div class="timer-val" id="timer">00:30</div>
+            </div>
+            <svg id="wheel-svg" viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="45" fill="none" stroke="#e940d3" stroke-width="10" />
+                <circle id="player-sector" cx="50" cy="50" r="45" fill="none" stroke="#3cd3c1" stroke-width="10" stroke-dasharray="0 283" />
+            </svg>
+            <!-- Аватарки будут тут -->
+            <div id="avatars-container"></div>
+        </div>
+
+        <div class="bet-controls">
+            <div style="display:flex; justify-content:space-between; margin-bottom:10px">
+                <span>Ваш баланс: <b id="bal-val">100</b> TON</span>
+                <span onclick="openWallet()" style="color:var(--primary); cursor:pointer">+ Пополнить</span>
+            </div>
+            <button class="main-btn" id="bet-btn" onclick="placeBet()">ПОСТАВИТЬ 1 TON</button>
         </div>
     </div>
 
-    <!-- Модалка кошелька -->
-    <div id="walletModal" class="modal">
-        <div class="modal-content">
-            <div id="walletInitial">
-                <h3>Привязать TON кошелек</h3>
-                <p style="font-size: 13px; color: #aaa;">Для операций с балансом подключите ваш кошелек</p>
-                <button class="menu-btn" onclick="connectWallet()">Привязать Tonkeeper</button>
-                <button onclick="closeWallet()" style="background:none; border:none; color:grey">Отмена</button>
-            </div>
-            <div id="walletMain" class="hidden">
-                <div class="wallet-tabs">
-                    <div class="w-tab active" id="tabDep" onclick="switchW('dep')">Пополнение</div>
-                    <div class="w-tab" id="tabWith" onclick="switchW('with')">Вывод</div>
-                </div>
-                <div id="depArea" style="margin-top:20px">
-                    <input type="number" id="depSum" placeholder="Сумма в TON">
-                    <button class="menu-btn" onclick="alert('Платежный шлюз в разработке')">Пополнить</button>
-                </div>
-                <div id="withArea" class="hidden" style="margin-top:20px">
-                    <h2 style="color: #8e8e93;">Soon..</h2>
-<p>Вывод средств временно недоступен</p>
-                </div>
-                <button onclick="closeWallet()" style="margin-top:10px; color: #8e8e93; background: none; border: none;">Закрыть</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="content">
-        <!-- Контент -->
+    <div id="content" class="hidden">
+        <!-- Сюда подгружается инвентарь или профиль -->
     </div>
 
     <nav class="nav">
-        <div class="nav-item active" id="n-prof" onclick="tab('profile')"><i data-lucide="user"></i>Профиль</div>
-        <div class="nav-item" id="n-game" onclick="tab('games')"><i data-lucide="gamepad-2"></i>Игры</div>
-        <div class="nav-item" id="n-inv" onclick="tab('inventory')"><i data-lucide="briefcase"></i>Инвентарь</div>
-        <div class="nav-item" id="n-shop" onclick="tab('shop')"><i data-lucide="shopping-cart"></i>Магазин</div>
+        <div class="nav-item active" onclick="showGame()"><i data-lucide="layout-grid"></i>Игра</div>
+        <div class="nav-item" onclick="showInventory()"><i data-lucide="briefcase"></i>Инвентарь</div>
+        <div class="nav-item" onclick="showShop()"><i data-lucide="shopping-cart"></i>Магазин</div>
     </nav>
 
     <script>
         const tg = window.Telegram.WebApp;
-        tg.expand();
+        let balance = parseFloat(localStorage.getItem('ton_bal')) || 100.0;
+        let inventory = JSON.parse(localStorage.getItem('inv')) || [];
+        let timerSeconds = 30;
+        let isSpinning = false;
+        let currentBet = 0;
+        let totalPot = 0;
 
-        let user = {
-            balance: parseFloat(localStorage.getItem('ton_bal')) || 100.00,
-            walletConnected: localStorage.getItem('wallet_conn') === 'true',
-            inventory: JSON.parse(localStorage.getItem('inv')) || []
-        };
-
-        function updateBal() {
-            document.getElementById('bal').innerText = user.balance.toFixed(2);
-            localStorage.setItem('ton_bal', user.balance);
-            localStorage.setItem('inv', JSON.stringify(user.inventory));
+        function updateUI() {
+            document.getElementById('bal-val').innerText = balance.toFixed(2);
+            document.getElementById('total-pot').innerText = totalPot.toFixed(2);
+            localStorage.setItem('ton_bal', balance);
+            localStorage.setItem('inv', JSON.stringify(inventory));
         }
 
-        // Логика кошелька
-        function openWallet() { document.getElementById('walletModal').style.display = 'flex'; renderWallet(); }
-        function closeWallet() { document.getElementById('walletModal').style.display = 'none'; }
-        function renderWallet() {
-            if(user.walletConnected) {
-                document.getElementById('walletInitial').classList.add('hidden');
-                document.getElementById('walletMain').classList.remove('hidden');
-            }
-        }
-        function connectWallet() {
-            user.walletConnected = true;
-            localStorage.setItem('wallet_conn', 'true');
-            renderWallet();
-        }
-        function switchW(type) {
-            if(type === 'dep') {
-                document.getElementById('depArea').classList.remove('hidden');
-                document.getElementById('withArea').classList.add('hidden');
-                document.getElementById('tabDep').classList.add('active');
-                document.getElementById('tabWith').classList.remove('active');
-            } else {
-                document.getElementById('depArea').classList.add('hidden');
-                document.getElementById('withArea').classList.remove('hidden');
-                document.getElementById('tabWith').classList.add('active');
-                document.getElementById('tabDep').classList.remove('active');
-            }
-        }
-
-        // Навигация
-        function tab(name) {
-            const c = document.getElementById('content');
-            document.querySelectorAll('.nav-item').forEach(e => e.classList.remove('active'));
-            document.getElementById('n-'+name.substring(0,4)).classList.add('active');
-            
-            if(name === 'profile') {
-                c.innerHTML = `<h3>Привет, ${tg.initDataUnsafe.user?.first_name || 'Игрок'}!</h3>
-                <div style="background:var(--sec-bg); padding:15px; border-radius:15px; text-align:center">
-                    <p>Статус: Игрок</p>
-                    <p>Предметов в инвентаре: ${user.inventory.length}</p>
-                </div>`;
-            } 
-            else if(name === 'games') {
-                c.innerHTML = `
-                    <button class="menu-btn" onclick="openMines()">🕹️ МИНЫ</button>
-                    <button class="menu-btn" onclick="openPvP()" style="background:#f39c12">🎡 PvP РУЛЕТКА</button>
-                `;
-            }
-            else if(name === 'inventory') {
-                if(user.inventory.length === 0) {
-                    c.innerHTML = `<p style="text-align:center; color:grey">Тут пока пусто...</p>`;
-                } else {
-                    let html = '<div class="inventory-grid">';
-                    user.inventory.forEach(item => {
-                        html += `<div class="inv-item"><i data-lucide="package"></i>${item}</div>`;
-                    });
-                    html += '</div>';
-                    c.innerHTML = html;
-                }
-            }
-            else if(name === 'shop') {
-                c.innerHTML = `
-                    <div style="display:flex; justify-content:space-between; background:var(--sec-bg); padding:15px; border-radius:12px; margin-bottom:10px">
-                        <span>🍭 Чупачупс</span><button onclick="buy('Чупачупс', 1)">1 TON</button>
-                    </div>
-                    <div style="display:flex; justify-content:space-between; background:var(--sec-bg); padding:15px; border-radius:12px">
-                        <span>🛡️ Скин: Алмаз</span><button onclick="buy('Скин: Алмаз', 15)">15 TON</button>
-                    </div>
-                `;
-            }
-            if (window.lucide) lucide.createIcons();
-        }
-
-        function buy(name, price) {
-            if(user.balance >= price) {
-                user.balance -= price;
-                user.inventory.push(name);
-                updateBal();
-                alert("Куплено и добавлено в инвентарь!");
-            } else {
-                alert("Недостаточно TON!");
-            }
-        }
-
-        // PvP Рулетка
-        function openPvP() {
-            const c = document.getElementById('content');
-            c.innerHTML = `
-                <h4 style="text-align:center">Онлайн лобби: 14 игроков</h4>
-                <div class="roulette-box">
-                    <div class="pointer"></div>
-                    <div id="wheel"></div>
-                </div>
-                <div id="statusPvP" style="text-align:center; margin-bottom:10px; font-weight:bold">Ставка: 10 TON</div>
-                <button id="spinBtn" class="menu-btn" onclick="playPvP()">ИГРАТЬ (10 TON)</button>
-                <button onclick="tab('games')" style="background:none; border:none; color:grey; width:100%">Назад</button>
-            `;
-        }
-
-        function playPvP() {
-            if(user.balance < 10) return alert("Мало TON!");
-            user.balance -= 10; updateBal();
-            
-            const btn = document.getElementById('spinBtn');
-            const status = document.getElementById('statusPvP');
-            const wheel = document.getElementById('wheel');
-            
-            btn.disabled = true;
-            status.innerText = "Поиск соперника...";
-            
-            setTimeout(() => {
-                status.innerText = "Игра началась!";
-                const randomDeg = Math.floor(3600 + Math.random() * 3600); // Минимум 10 оборотов
-                wheel.style.transform = `rotate(${randomDeg}deg)`;
+        // Логика таймера и "онлайна"
+        function startTimer() {
+            const timerEl = document.getElementById('timer');
+            const interval = setInterval(() => {
+                if (isSpinning) return;
                 
-                setTimeout(() => {
-                    const actualDeg = randomDeg % 360;
-                    // Простая проверка: если попали в синий сектор (0-45, 90-135 и т.д.)
-                    const win = (actualDeg > 0 && actualDeg < 45) || (actualDeg > 90 && actualDeg < 135) || (actualDeg > 180 && actualDeg < 225) || (actualDeg > 270 && actualDeg < 315);
-                    
-                    if(win) {
-                        user.balance += 20;
-                        alert("ПОБЕДА! Вы выиграли 20 TON");
-                    } else {alert("ПРОИГРЫШ! Повезет в следующий раз");
-                    }
-                    updateBal();
-                    openPvP();
-                }, 4100);
-            }, 1500);
+                timerSeconds--;
+                let s = timerSeconds < 10 ? '0' + timerSeconds : timerSeconds;
+                timerEl.innerText = `00:${s}`;
+
+                // Имитация захода других игроков
+                if (timerSeconds % 7 === 0 && timerSeconds > 5) {
+                    addFakePlayer();
+                }
+
+                if (timerSeconds <= 0) {
+                    spinWheel();
+                    timerSeconds = 30;
+                }
+            }, 1000);
         }
 
-        // Мины (старая логика, адаптированная)
-        function openMines() {
-            const c = document.getElementById('content');
-            c.innerHTML = `
-                <div style="margin-bottom:10px">Ставка: <input type="number" id="bt" value="5" style="width:60px"></div>
-                <div id="mineField" style="display:grid; grid-template-columns:repeat(5,1fr); gap:5px; background:#333; padding:10px; border-radius:10px"></div>
-                <button class="menu-btn" style="margin-top:10px" onclick="startMines()">Начать игру</button>
-                <button onclick="tab('games')" style="background:none; border:none; color:grey; width:100%">Назад</button>
-            `;
-            const f = document.getElementById('mineField');
-            for(let i=0; i<25; i++) f.innerHTML += `<div style="height:40px; background:#444; border-radius:4px"></div>`;
+        function addFakePlayer() {
+            let bet = Math.floor(Math.random() * 5) + 1;
+            totalPot += bet;
+            updateUI();
+            // В реальности тут прилетал бы Webhook от сервера
         }
 
-        function startMines() {
-            const b = parseFloat(document.getElementById('bt').value);
-            if(user.balance < b) return alert("Мало TON!");
-            user.balance -= b; updateBal();
-            
-            const f = document.getElementById('mineField');
-            f.innerHTML = '';
-            let mines = [];
-            while(mines.length < 3) {
-                let r = Math.floor(Math.random()*25);
-                if(!mines.includes(r)) mines.push(r);
+        function placeBet() {
+            if (balance >= 1) {
+                balance -= 1;
+                currentBet += 1;
+                totalPot += 1;
+                
+                // Рисуем наш сектор (бирюзовый)
+                let percent = (currentBet / totalPot) * 283;
+                document.getElementById('player-sector').setAttribute('stroke-dasharray', `${percent} 283`);
+                
+                updateUI();
+                tg.HapticFeedback.impactOccurred('medium');
             }
+        }
 
-            for(let i=0; i<25; i++) {
-                const cell = document.createElement('div');
-                cell.style = "height:40px; background:#555; border-radius:4px; display:flex; align-items:center; justify-content:center";
-                cell.onclick = () => {
-                    if(mines.includes(i)) {
-                        cell.innerHTML = '💣'; cell.style.background = 'red';
-                        alert("БУМ!"); openMines();
+        function spinWheel() {
+            isSpinning = true;
+            const wheel = document.getElementById('wheel-svg');
+            const randomDeg = 1800 + Math.random() * 1800;
+            wheel.style.transform = `rotate(${randomDeg}deg)`;
+
+            setTimeout(() => {
+                isSpinning = false;
+                wheel.style.transition = 'none';
+                wheel.style.transform = 'rotate(0deg)';
+                setTimeout(() => wheel.style.transition = 'transform 5s cubic-bezier(0.15, 0, 0.15, 1)', 50);
+                
+                // Результат
+                if (currentBet > 0) {
+                    let win = Math.random() < (currentBet / totalPot);
+                    if (win) {
+                        let prize = totalPot * 0.95;
+                        balance += prize;
+                        alert(`Вы выиграли ${prize.toFixed(2)} TON!`);
                     } else {
-                        cell.innerHTML = '💎'; cell.style.background = '#2ecc71';
-                        user.balance += (b * 0.15); updateBal();
+                        alert("Победа за игроком #429");
                     }
-                };
-                f.appendChild(cell);
+                }
+                
+                currentBet = 0;
+                totalPot = 0;
+                document.getElementById('player-sector').setAttribute('stroke-dasharray', `0 283`);
+                updateUI();
+            }, 5500);
+        }
+
+        // Переключение вкладок
+        function showGame() {
+            document.getElementById('game-ui').classList.remove('hidden');
+            document.getElementById('content').classList.add('hidden');
+        }
+
+        function showInventory() {
+            document.getElementById('game-ui').classList.add('hidden');
+            document.getElementById('content').classList.remove('hidden');
+            const c = document.getElementById('content');
+            c.innerHTML = '<h2>Инвентарь</h2>';if(inventory.length === 0) c.innerHTML += '<p>Пусто</p>';
+            inventory.forEach(i => c.innerHTML += `<div style="padding:10px; background:#1a1d23; margin-bottom:5px; border-radius:10px">${i}</div>`);
+            lucide.createIcons();
+        }
+
+        function showShop() {
+            document.getElementById('game-ui').classList.add('hidden');
+            document.getElementById('content').classList.remove('hidden');
+            document.getElementById('content').innerHTML = `
+                <h2>Магазин</h2>
+                <div onclick="buy('VIP Скин')" style="padding:15px; background:var(--primary); border-radius:10px; text-align:center">Купить VIP Скин (10 TON)</div>
+            `;
+        }
+
+        function buy(item) {
+            if(balance >= 10) {
+                balance -= 10;
+                inventory.push(item);
+                updateUI();
+                alert("Куплено!");
             }
         }
 
-        window.onload = () => { tab('profile'); updateBal(); };
+        window.onload = () => {
+            lucide.createIcons();
+            startTimer();
+            updateUI();
+        };
     </script>
 </body>
 </html>
