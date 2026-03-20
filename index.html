@@ -2,8 +2,9 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Ton Mini App</title>
+    <!-- Подключаем скрипты -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
@@ -11,90 +12,119 @@
             --primary: #2481cc;
             --bg: var(--tg-theme-bg-color, #fff);
             --text: var(--tg-theme-text-color, #000);
-            --secondary-bg: var(--tg-theme-secondary-bg-color, #f0f0f0);
-            --accent: #0088cc;
+            --sec-bg: var(--tg-theme-secondary-bg-color, #efeff4);
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
             background-color: var(--bg);
             color: var(--text);
             margin: 0; padding: 0;
-            display: flex; flex-direction: column; height: 100vh; overflow: hidden;
+            user-select: none;
+            overflow: hidden;
         }
 
-        #content { flex: 1; padding: 15px; overflow-y: auto; padding-bottom: 80px; }
-
-        /* Баланс сверху */
-        .balance-header {
-            display: flex; justify-content: center; align-items: center;
-            padding: 10px; background: var(--secondary-bg); border-radius: 12px; margin-bottom: 15px;
+        /* Верхняя панель баланса */
+        .header {
+            background: var(--sec-bg);
+            padding: 10px;
+            text-align: center;
+            border-bottom: 1px solid #ccc;
+            font-weight: bold;
+            font-size: 18px;
+            color: var(--primary);
         }
-        .balance-header span { font-weight: bold; font-size: 1.2em; color: var(--primary); }
 
-        /* Профиль */
-        .profile-card { text-align: center; background: var(--secondary-bg); padding: 20px; border-radius: 15px; }
-        .avatar { width: 80px; height: 80px; border-radius: 50%; border: 3px solid var(--primary); margin-bottom: 10px; }
+        #content {
+            height: calc(100vh - 120px);
+            overflow-y: auto;
+            padding: 15px;
+            box-sizing: border-box;
+        }
 
-        /* Кнопки меню выбора игр */
-        .game-menu-btn {
-            width: 100%; padding: 20px; margin-bottom: 10px; border-radius: 12px;
-            border: none; background: var(--primary); color: white; font-size: 18px;
-            display: flex; align-items: center; justify-content: space-between;
+        /* Карточка профиля */
+        .profile-card {
+            background: var(--sec-bg);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+        }
+        .avatar {
+            width: 80px; height: 80px;
+            border-radius: 50%;
+            background: #ccc;
+            margin-bottom: 10px;
+            border: 2px solid var(--primary);
+        }
+
+        /* Меню выбора игр */
+        .menu-btn {
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            width: 100%;
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        /* Магазин */
+        .shop-item {
+            background: var(--sec-bg);
+            margin-bottom: 10px;
+            padding: 15px;
+            border-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
         /* Игра Мины */
-        .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; width: 100%; }
-        .input-group { display: flex; flex-direction: column; }
-        .input-group label { font-size: 12px; margin-bottom: 4px; }
-        .input-group input { padding: 8px; border-radius: 8px; border: 1px solid #ccc; }
-
-        .game-wrapper { position: relative; width: 300px; height: 300px; margin: 0 auto; border-radius: 10px; overflow: hidden; background: #222; }
-        .image-underlay { position: absolute; width: 100%; height: 100%; background-image: url('game_bg.jpg'); background-size: cover; z-index: 1; }
-        .mines-grid { position: absolute; width: 100%; height: 100%; display: grid; grid-template-columns: repeat(5, 1fr); z-index: 2; }
-        .cell { background: #333; border: 0.5px solid rgba(255,255,255,0.1); cursor: pointer; display: flex; justify-content: center; align-items: center; font-size: 20px; }
+        .game-container { position: relative; width: 280px; height: 280px; margin: 0 auto; background: #333; border-radius: 8px; overflow: hidden; }
+        .grid { display: grid; grid-template-columns: repeat(5, 1fr); height: 100%; width: 100%; position: absolute; z-index: 2; }
+        .cell { border: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; font-size: 20px; background: #444; }
         .cell.open { background: transparent; }
-        .cell.mine { background: rgba(255,0,0,0.8); }
+        .bg-img { position: absolute; width: 100%; height: 100%; background-image: url('game_bg.jpg'); background-size: cover; z-index: 1; }
 
-        /* PvP Рулетка */
-        .roulette-container { text-align: center; padding: 20px; background: var(--secondary-bg); border-radius: 15px; }
-        .players { display: flex; justify-content: space-between; margin-bottom: 20px; }
-        .player-box { width: 45%; padding: 10px; background: #fff; border-radius: 10px; color: #000; }
-        .player-box.winner { border: 2px solid gold; animation: blink 0.5s infinite; }
-        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
-
-        /* Магазин */
-        .shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-        .shop-item { background: var(--secondary-bg); padding: 15px; border-radius: 12px; text-align: center; }
-        .shop-item img { width: 50px; height: 50px; }
-
-        /* Навигация */
-        .bottom-nav { position: fixed; bottom: 0; width: 100%; display: flex; justify-content: space-around; padding: 10px 0 25px 0; background: var(--secondary-bg); border-top: 1px solid #ccc; z-index: 10; }
-        .nav-item { display: flex; flex-direction: column; align-items: center; color: #999; flex: 1; font-size: 12px; }
+        /* Нижняя навигация */
+        .nav {
+            position: fixed; bottom: 0; width: 100%; height: 70px;
+            background: var(--sec-bg);
+            display: flex; justify-content: space-around;
+            border-top: 1px solid #ccc;
+            padding-bottom: 15px;
+        }
+        .nav-item {
+            flex: 1; display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            color: #8e8e93; font-size: 12px; text-decoration: none;
+        }
         .nav-item.active { color: var(--primary); }
+        .nav-item i { margin-bottom: 4px; }
 
         .hidden { display: none; }
-        .btn-main { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 8px; width: 100%; margin-top: 10px; font-weight: bold; }
     </style>
 </head>
 <body>
 
+    <div class="header">💎 <span id="bal">100.00</span> TON</div>
+
     <div id="content">
-        <div class="balance-header">
-            <span>💎 <span id="user-balance">100.00</span> TON</span>
-        </div>
-        <div id="view-area"></div>
+        <!-- Контент подгружается сюда -->
     </div>
 
-    <nav class="bottom-nav">
-        <div class="nav-item" id="nav-profile" onclick="showTab('profile')">
-            <i data-lucide="user"></i><span>Профиль</span>
+    <nav class="nav">
+        <div class="nav-item" id="n-prof" onclick="tab('profile')">
+            <i data-lucide="user"></i>Профиль
         </div>
-        <div class="nav-item" id="nav-games" onclick="showTab('games')">
-            <i data-lucide="gamepad-2"></i><span>Игры</span>
+        <div class="nav-item" id="n-game" onclick="tab('games')">
+            <i data-lucide="gamepad-2"></i>Игры
         </div>
-        <div class="nav-item" id="nav-shop" onclick="showTab('shop')">
-            <i data-lucide="shopping-cart"></i><span>Магазин</span>
+        <div class="nav-item" id="n-shop" onclick="tab('shop')">
+            <i data-lucide="shopping-cart"></i>Магазин
         </div>
     </nav>
 
@@ -102,186 +132,107 @@
         const tg = window.Telegram.WebApp;
         tg.expand();
 
-        // Состояние приложения
-        let state = {
-            balance: parseFloat(localStorage.getItem('balance')) || 100.00,
-            bet: 10,
-            minesCount: 3,
-            minesPositions: [],
-            gameOver: false
+        let user = {
+            balance: parseFloat(localStorage.getItem('ton_bal')) || 100.00,
+            bet: 5,
+            mines: 3
         };
 
-        function updateBalanceDisplay() {
-            document.getElementById('user-balance').innerText = state.balance.toFixed(2);
-            localStorage.setItem('balance', state.balance);
+        function updateBal() {
+            document.getElementById('bal').innerText = user.balance.toFixed(2);
+            localStorage.setItem('ton_bal', user.balance);
         }
 
-        function showTab(tab) {
-            const area = document.getElementById('view-area');
-            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-            document.getElementById('nav-' + tab).classList.add('active');
-
-            if (tab === 'profile') {
-                const user = tg.initDataUnsafe.user;
-                area.innerHTML = `
+        function tab(name) {
+            const c = document.getElementById('content');
+            document.querySelectorAll('.nav-item').forEach(e => e.classList.remove('active'));
+            
+            if(name === 'profile') {
+                document.getElementById('n-prof').classList.add('active');
+                c.innerHTML = `
                     <div class="profile-card">
-                        <img src="${user?.photo_url || 'https://cdn-icons-pn
-g.flaticon.com/512/3135/3135715.png'}" class="avatar">
-                        <h2>${user?.first_name || 'Игрок'}</h2>
-                        <p>ID: ${user?.id || '000000'}</p>
-                        <p>Статус: Игрок TON</p>
+                        <img src="${tg.initDataUnsafe.user?.photo_url || 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png'}" class="avatar">
+                        <h3>${tg.initDataUnsafe.user?.first_name || 'Игрок'}</h3>
+                        <p>Ваш баланс полностью готов к игре!</p>
                     </div>
                 `;
-            } 
-            else if (tab === 'games') {
-                area.innerHTML = `
-                    <button class="game-menu-btn" onclick="showSoloGames()"><span>🕹️ Соло Игры</span> <i data-lucide="chevron-right"></i></button>
-                    <button class="game-menu-btn" onclick="showPvPGames()"><span>⚔️ PvP Игры</span> <i data-lucide="chevron-right"></i></button>
+            } else if(name === 'games') {
+                document.getElementById('n-game').classList.add('active');
+                c.innerHTML = `
+                    <button class="menu-btn" onclick="openMines()">🕹️ Соло: МИНЫ</button>
+                    <button class="menu-btn" onclick="openPvP()" style="background:#555">⚔️ PvP: РУЛЕТКА</button>
                 `;
-            } 
-            else if (tab === 'shop') {
-                area.innerHTML = `
-                    <div class="shop-grid">
-                        <div class="shop-item">
-                            <img src="https://cdn-icons-png.flaticon.com/512/2454/2454256.png">
-                            <p>Клубничный Чупачупс</p>
-                            <button class="btn-main" onclick="buy(0.5)">0.5 TON</button>
-                        </div>
-                        <div class="shop-item">
-                            <img src="https://cdn-icons-png.flaticon.com/512/2454/2454244.png">
-                            <p>Золотой Чупачупс</p>
-                            <button class="btn-main" onclick="buy(5)">5.0 TON</button>
-                        </div>
-                    </div>
+            } else if(name === 'shop') {
+                document.getElementById('n-shop').classList.add('active');
+                c.innerHTML = `
+                    <div class="shop-item"><span>🍭 Чупачупс</span><button onclick="buy(1)">1 TON</button></div>
+                    <div class="shop-item"><span>🎁 VIP Статус</span><button onclick="buy(50)">50 TON</button></div>
                 `;
             }
-            lucide.createIcons();
-            updateBalanceDisplay();
+            if (window.lucide) lucide.createIcons();
         }
 
-        // --- СОЛО ИГРЫ (МИНЫ) ---
-        function showSoloGames() {
-            const area = document.getElementById('view-area');
-            area.innerHTML = `
-                <div class="controls">
-                    <div class="input-group">
-                        <label>Ставка (TON)</label>
-                        <input type="number" id="betInput" value="${state.bet}" onchange="state.bet = parseFloat(this.value)">
-                    </div>
-                    <div class="input-group">
-                        <label>Мин (1-24)</label>
-                        <input type="number" id="minesInput" value="${state.minesCount}" onchange="state.minesCount = parseInt(this.value)">
-                    </div>
+        // --- ЛОГИКА ИГР ---
+        function openMines() {
+            const c = document.getElementById('content');
+            c.innerHTML = `
+                <div style="margin-bottom:10px">Ставка: <input type="number" id="bt" value="${user.bet}" style="width:50px"></div>
+                <div class="game-container">
+                    <div class="bg-img"></div>
+                    <div class="grid" id="g"></div>
                 </div>
-                <div class="game-wrapper">
-                    <div class="image-underlay"></div>
-                    <div class="mines-grid" id="grid"></div>
-                </div>
-                <button class="btn-main" onclick="startMines()">Играть</button>
+                <button class="menu-btn" style="margin-top:10px" onclick="startMines()">Играть</button>
+                <button onclick="tab('games')" style="background:none; border:none; color:grey; width:100%">Назад</button>
             `;
-            renderMinesGrid(true);
+            const g = document.getElementById('g');
+            for(let i=0; i<25; i++) g.innerHTML += `<div class="cell"></div>`;
         }
 
+        let mPos = [];
         function startMines() {
-            if (state.balance < state.bet) return alert("Недостаточно TON!");
-            state.balance -= state.bet;
-            updateBalanceDisplay();
+            const b = parseFloat(document.getElementById('bt').value);
+            if(user.balance < b) return alert("Мало TON!");
+            user.balance -= b; updateBal();
             
-            state.gameOver = false;
-            state.minesPositions = [];
-            while(state.minesPositions.length < state.minesCount) {
-                let r = Math.floor(Math.random() * 25);
-                if(!state.minesPositions.includes(r)) state.minesPositions.push(r);
+            mPos = [];
+            while(mPos.length < 3) {
+                let r = Math.floor(Math.random()*25);
+                if(!mPos.includes(r)) mPos.push(r);
             }
-            renderMinesGrid(false);
-        }
-
-        function renderMinesGrid(preview) {
-            const grid = document.getElementById('grid');
-            grid.innerHTML = '';
-            for (let i = 0; i < 25; i++) {
-                const cell = document.createElement('div');
-                cell.className = 'cell';
-                if (!preview) cell.onclick = () => handleMineClick(i, cell);
-                grid.appendChild(cell);
-            }
-        }
-
-        function handleMineClick(idx, cell) {
-            if (state.gameOver || cell.classList.contains('open')) return;
-            if (state.minesPositions.includes(idx)) {
-                state.gameOver = true;
-                cell.classList.add('mine'); cell.innerHTML = "💣";
-                alert("Мина! Вы проиграли " + state.bet + " TON");
-                showSoloGames();
-            } else {
-                cell.classList.add('open');
-                // Простейшая формула выигрыша
-                let winAmount = (state.bet * (1 + (state.minesCount / 25))).toFixed(2);
-                state.balance += parseFloat(winAmount / 5); // по частям
-                updateBalanceDisplay();
-            }
-        }
-
-        // --- PvP ИГРЫ (РУЛЕТКА) ---
-        function showPvPGames() {
-            const area = document.getElementById('view-area');
-            area.innerHTML = `
-                <div class="roulette-container">
-                    <h3>PvP Рулетка (Симуляция)</h3>
-                    <div class="players">
-                        <div class="player-box" id="p1">Вы</div>
-                        <div class="player-box" id="p2">Соперник</div>
-                    </div>
-                    <div class="input-group">
-                        <label>Ставка</label>
-                        <input type="number" id="pvpBet" value="10">
-                    </div>
-                    <button class="btn-main" onclick="playRoulette()">Бросить вызов</button>
-                </div>
-            `;
-        }
-
-        function playRoulette() {
-            const bet = parseFloat(document.getElementById('pvpBet').value);
-            if (state.balance < bet) return alert("Мало TON!");
             
-            state.balance -= bet;
-            updateBalanceDisplay();
-            
-            let status = document.getElementById('p2');
-            status.innerText = "Ищем соперника...";
-            
-            setTimeout(() => {
-                status.innerText = "Игрок найден!";
-                setTimeout(() => {
-                    const win = Math.random() > 0.5;
-                    if (win) {
-                        document.getElementById('p1').classList.add('winner');
-                        state.balance += bet * 1.9;
-                        alert("Вы выиграли " + (bet * 0.9).toFixed(2) + " TON!");
+            const cells = document.querySelectorAll('.cell');
+            cells.forEach((cell, i) => {
+                cell.className = 'cell'; cell.innerHTML = '';
+                cell.onclick = () => {
+                    if(mPos.includes(i)) {
+                        cell.classList.add('open'); cell.style.background = 'red'; cell.innerHTML = '💣';
+                        alert("Взрыв!"); openMines();
                     } else {
-                        document.getElementById('p2').classList.add('winner');
-                        alert("Вы проиграли ставку.");
+                        cell.classList.add('open');
+                        user.balance += (b * 0.1); updateBal();
                     }
-                    updateBalanceDisplay();
-                    setTimeout(showPvPGames, 2000);
-                }, 2000);
-            }, 1500);
+                };
+            });
         }
 
-        function buy(price) {
-            if (state.balance >= price) {
-                state.balance -= price;
-                updateBalanceDisplay();
-                alert("Покупка успешна!");
-            } else {
-                alert("Недостаточно TON!");
-            }
+        function openPvP() {
+            alert("Поиск соперника...");
+            setTimeout(() => {
+                if(Math.random() > 0.5) alert("Вы выиграли 10 TON!");
+                else alert("Вы проиграли!");
+            }, 2000);
         }
 
-        // Инициализация
-        showTab('profile');
+        function buy(p) {
+            if(user.balance >= p) { user.balance -= p; updateBal(); alert("Куплено!"); }
+            else alert("Нет денег!");
+        }
+
+        // Запуск
+        window.onload = () => {
+            tab('profile');
+            updateBal();
+        };
     </script>
 </body>
 </html>
