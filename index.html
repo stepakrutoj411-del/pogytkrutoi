@@ -3,311 +3,170 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Ton Roulette PvP</title>
+    <title>Roulette PvP & Solo</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        :root {
-            --bg: #0f1115;
-            --sec-bg: #1a1d23;
-            --primary: #2481cc;
-            --pink: #e940d3;
-            --cyan: #3cd3c1;
-            --text: #ffffff;
-        }
-
-        body {
-            font-family: -apple-system, sans-serif;
-            background-color: var(--bg);
-            color: var(--text);
-            margin: 0; padding: 0;
-            user-select: none;
-            overflow: hidden;
-        }
-
-        /* Хедер из скриншота */
-        .game-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px;
-            background: var(--bg);
-        }
-        .pot-badge {
-            background: #1a1d23;
-            padding: 8px 20px;
-            border-radius: 12px;
-            font-weight: bold;
-            font-size: 14px;
-            color: #8e8e93;
-        }
-        .pot-badge span { color: #50a1e3; }
-
-        .icon-btn {
-            background: #1a1d23;
-            border: none;
-            color: white;
-            width: 40px; height: 40px;
-            border-radius: 10px;
-            display: flex; align-items: center; justify-content: center;
-        }
-
-        /* Колесо */
-        .wheel-container {
-            position: relative;
-            width: 320px;
-            height: 320px;
-            margin: 20px auto;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        #wheel-svg {
-            width: 100%;
-            height: 100%;
-            transform: rotate(-90deg);
-            transition: transform 5s cubic-bezier(0.15, 0, 0.15, 1);
-        }
-
-        .center-timer {
-            position: absolute;
-            width: 100px;
-            height: 100px;
-            background: #000;
-            border-radius: 50%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 10;
-            box-shadow: 0 0 20px rgba(0,0,0,0.5);
-        }
-        .timer-val { font-size: 24px; font-weight: bold; }
-        .pointer-top {
-            position: absolute;
-            top: -10px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 0; height: 0;
-            border-left: 12px solid transparent;
-            border-right: 12px solid transparent;
-            border-bottom: 20px solid white; /* Перевернутый треугольник как на скрине */
-            z-index: 11;
-        }
-
-        /* Инвентарь и вкладки */
-        #content { height: calc(100vh - 140px); overflow-y: auto; padding: 15px; }
+        :root { --bg: #0f1115; --sec-bg: #1a1d23; --primary: #2481cc; --pink: #e940d3; --cyan: #3cd3c1; --text: #fff; }
+        body { font-family: sans-serif; background: var(--bg); color: var(--text); margin: 0; overflow: hidden; }
         
-        .nav {
-            position: fixed; bottom: 0; width: 100%; height: 70px;
-            background: var(--sec-bg); display: flex; justify-content: space-around;
-            border-top: 1px solid #333; padding-bottom: 15px;
-        }
-        .nav-item {
-            flex: 1; display: flex; flex-direction: column;
-            align-items: center; justify-content: center;
-            color: #8e8e93; font-size: 11px; text-decoration: none;
-        }
+        .header { display: flex; justify-content: space-between; padding: 15px; align-items: center; }
+        .pot-badge { background: var(--sec-bg); padding: 8px 15px; border-radius: 12px; font-weight: bold; }
+        
+        .menu-grid { display: grid; grid-template-columns: 1fr; gap: 15px; padding: 20px; }
+        .game-card { background: var(--sec-bg); padding: 30px; border-radius: 20px; text-align: center; font-size: 20px; font-weight: bold; border: 1px solid #333; }
+
+        /* Рулетка */
+        .wheel-box { position: relative; width: 280px; height: 280px; margin: 20px auto; }
+        #wheel-svg { width: 100%; height: 100%; transform: rotate(-90deg); transition: transform 5s cubic-bezier(0.15, 0, 0.15, 1); }
+        .center-timer { position: absolute; top:50%; left:50%; transform:translate(-50%,-50%); background:#000; width:80px; height:80px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:20px; font-weight:bold; z-index:5; }
+        
+        .history-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 100; display: none; padding: 20px; box-sizing: border-box; }
+
+        .nav { position: fixed; bottom: 0; width: 100%; height: 70px; background: var(--sec-bg); display: flex; justify-content: space-around; padding-bottom: 15px; }
+        .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #8e8e93; font-size: 11px; }
         .nav-item.active { color: var(--primary); }
-
-        .bet-controls {
-            padding: 20px;
-            background: var(--sec-bg);
-            border-radius: 20px 20px 0 0;
-            position: fixed; bottom: 70px; width: 100%;
-            box-sizing: border-box;
-        }
-
-        .main-btn {
-            background: var(--primary);
-            color: white; border: none;
-            width: 100%; padding: 15px;
-            border-radius: 12px; font-weight: bold; font-size: 16px;
-        }
-
-        /* Аватарки на круге */
-        .player-avatar {
-            width: 30px; height: 30px;
-            border-radius: 50%;
-            border: 2px solid white;
-            position: absolute;
-            transition: all 0.3s;
-        }
-
+        
+        .main-btn { background: var(--primary); color: white; border: none; width: 90%; padding: 15px; border-radius: 12px; font-weight: bold; margin: 10px 5%; }
         .hidden { display: none; }
     </style>
 </head>
 <body>
 
-    <div id="game-ui">
-        <div class="game-header">
-            <button class="icon-btn"><i data-lucide="history"></i></button>
-            <div class="pot-badge">ВСЕГО <span id="total-pot">0</span> <span>TON</span></div>
-            <button class="icon-btn"><i data-lucide="message-circle"></i></button>
+    <div id="app">
+        <div class="header">
+            <button class="icon-btn" onclick="toggleHistory()"><i data-lucide="history"></i></button>
+            <div class="pot-badge">ВСЕГО <span id="total-pot">0</span> TON</div>
+            <button class="icon-btn" onclick="openWallet()"><i data-lucide="wallet"></i></button>
         </div>
 
-        <div class="wheel-container">
-            <div class="pointer-top"></div>
-            <div class="center-timer">
-                <div class="timer-val" id="timer">00:30</div>
-            </div>
-            <svg id="wheel-svg" viewBox="0 0 100 100">
-                <circle cx="50" cy="50" r="45" fill="none" stroke="#e940d3" stroke-width="10" />
-                <circle id="player-sector" cx="50" cy="50" r="45" fill="none" stroke="#3cd3c1" stroke-width="10" stroke-dasharray="0 283" />
-            </svg>
-            <!-- Аватарки будут тут -->
-            <div id="avatars-container"></div>
+        <div id="main-menu" class="menu-grid">
+            <div class="game-card" onclick="showSubMenu('solo')" style="border-color: var(--cyan)">🕹️ СОЛО ИГРЫ</div>
+            <div class="game-card" onclick="showSubMenu('pvp')" style="border-color: var(--pink)">⚔️ PVP ИГРЫ</div>
         </div>
 
-        <div class="bet-controls">
-            <div style="display:flex; justify-content:space-between; margin-bottom:10px">
-                <span>Ваш баланс: <b id="bal-val">100</b> TON</span>
-                <span onclick="openWallet()" style="color:var(--primary); cursor:pointer">+ Пополнить</span>
+        <!-- Подменю Соло -->
+        <div id="solo-menu" class="menu-grid hidden">
+            <div class="game-card" onclick="startMines()">💣 МИНЫ</div>
+            <button onclick="backToMenu()" style="color: grey; background: none; border: none;">Назад</button>
+        </div>
+
+        <!-- Подменю PvP -->
+        <div id="pvp-menu" class="menu-grid hidden">
+            <div class="game-card" onclick="startRoulette()">🎡 РУЛЕТКА</div>
+            <button onclick="backToMenu()" style="color: grey; background: none; border: none;">Назад</button>
+        </div>
+
+        <!-- Игра Рулетка -->
+        <div id="roulette-game" class="hidden">
+            <div class="wheel-box">
+                <div style="position:absolute; top:-10px; left:50%; transform:translateX(-50%); width:0; height:0; border-left:10px solid transparent; border-right:10px solid transparent; border-bottom:15px solid #fff; z-index:10;"></div>
+                <div class="center-timer" id="timer">00:30</div>
+                <svg id="wheel-svg" viewBox="0 0 100 100">
+                    <circle cx="50" cy="50" r="45" fill="none" stroke="#e940d3" stroke-width="10" />
+                    <circle id="player-sector" cx="50" cy="50" r="45" fill="none" stroke="#3cd3c1" stroke-width="10" stroke-dasharray="0 283" />
+                </svg>
             </div>
-            <button class="main-btn" id="bet-btn" onclick="placeBet()">ПОСТАВИТЬ 1 TON</button>
+            <button class="main-btn" onclick="sendBet()">ПОСТАВИТЬ 1 TON (Комиссия 5%)</button>
         </div>
     </div>
 
-    <div id="content" class="hidden">
-        <!-- Сюда подгружается инвентарь или профиль -->
+    <div id="history-modal" class="history-modal">
+        <h2>История игр</h2>
+        <div id="history-list"></div>
+        <button class="main-btn" onclick="toggleHistory()">Закрыть</button>
     </div>
 
     <nav class="nav">
-        <div class="nav-item active" onclick="showGame()"><i data-lucide="layout-grid"></i>Игра</div>
-        <div class="nav-item" onclick="showInventory()"><i data-lucide="briefcase"></i>Инвентарь</div>
-        <div class="nav-item" onclick="showShop()"><i data-lucide="shopping-cart"></i>Магазин</div>
+        <div class="nav-item active" onclick="backToMenu()"><i data-lucide="gamepad-2"></i>Игры</div>
+        <div class="nav-item" onclick="alert('Инвентарь')"><i data-lucide="briefcase"></i>Инвентарь</div>
     </nav>
 
     <script>
         const tg = window.Telegram.WebApp;
-        let balance = parseFloat(localStorage.getItem('ton_bal')) || 100.0;
-        let inventory = JSON.parse(localStorage.getItem('inv')) || [];
-        let timerSeconds = 30;
-        let isSpinning = false;
-        let currentBet = 0;
-        let totalPot = 0;
+        let balance = 100;
+        let ws;
+        let myId = tg.initDataUnsafe.user?.id || Math.random();
+        let myName = tg.initDataUnsafe.user?.first_name || "Игрок";
 
-        function updateUI() {
-            document.getElementById('bal-val').innerText = balance.toFixed(2);
-            document.getElementById('total-pot').innerText = totalPot.toFixed(2);
-            localStorage.setItem('ton_bal', balance);
-            localStorage.setItem('inv', JSON.stringify(inventory));
-        }
+        // WebSocket соединение
+        function connect() {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            ws = new WebSocket(`${protocol}//${window.location.host}/ws`);
 
-        // Логика таймера и "онлайна"
-        function startTimer() {
-            const timerEl = document.getElementById('timer');
-            const interval = setInterval(() => {
-                if (isSpinning) return;
-                
-                timerSeconds--;
-                let s = timerSeconds < 10 ? '0' + timerSeconds : timerSeconds;
-                timerEl.innerText = `00:${s}`;
-
-                // Имитация захода других игроков
-                if (timerSeconds % 7 === 0 && timerSeconds > 5) {
-                    addFakePlayer();
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                if (data.type === 'sync') {
+                    document.getElementById('total-pot').innerText = data.state.total_pot;
+                    updateHistory(data.state.history);
+                    updateWheel(data.state);
+                } else if (data.type === 'timer') {
+                    document.getElementById('timer').innerText = `00:${data.value < 10 ? '0' + data.value : data.value}`;
+                } else if (data.type === 'result') {
+                    animateWin(data);
                 }
-
-                if (timerSeconds <= 0) {
-                    spinWheel();
-                    timerSeconds = 30;
-                }
-            }, 1000);
+            };
         }
 
-        function addFakePlayer() {
-            let bet = Math.floor(Math.random() * 5) + 1;
-            totalPot += bet;
-            updateUI();
-            // В реальности тут прилетал бы Webhook от сервера
-        }
-
-        function placeBet() {
-            if (balance >= 1) {
-                balance -= 1;
-                currentBet += 1;
-                totalPot += 1;
-                
-                // Рисуем наш сектор (бирюзовый)
-                let percent = (currentBet / totalPot) * 283;
-                document.getElementById('player-sector').setAttribute('stroke-dasharray', `${percent} 283`);
-                
-                updateUI();
-                tg.HapticFeedback.impactOccurred('medium');
+        function sendBet() {
+            if (balance >= 1) {balance -= 1;
+                ws.send(JSON.stringify({
+                    type: 'bet',
+                    id: myId,
+                    name: myName,
+                    amount: 1,
+                    color: '#3cd3c1'
+                }));
             }
         }
 
-        function spinWheel() {
-            isSpinning = true;
-            const wheel = document.getElementById('wheel-svg');
-            const randomDeg = 1800 + Math.random() * 1800;
-            wheel.style.transform = `rotate(${randomDeg}deg)`;
+        function updateWheel(state) {
+            let myBet = state.players.filter(p => p.id === myId).reduce((a, b) => a + b.bet, 0);
+            if (state.total_pot > 0) {
+                let percent = (myBet / state.total_pot) * 283;
+                document.getElementById('player-sector').setAttribute('stroke-dasharray', `${percent} 283`);
+            }
+        }
 
+        function animateWin(data) {
+            const wheel = document.getElementById('wheel-svg');
+            wheel.style.transform = `rotate(${3600 + Math.random() * 360}deg)`;
             setTimeout(() => {
-                isSpinning = false;
+                alert(`Победитель: ${data.winner.name}\nБанк: ${data.prize} TON (за вычетом 5%)`);
                 wheel.style.transition = 'none';
-                wheel.style.transform = 'rotate(0deg)';
-                setTimeout(() => wheel.style.transition = 'transform 5s cubic-bezier(0.15, 0, 0.15, 1)', 50);
-                
-                // Результат
-                if (currentBet > 0) {
-                    let win = Math.random() < (currentBet / totalPot);
-                    if (win) {
-                        let prize = totalPot * 0.95;
-                        balance += prize;
-                        alert(`Вы выиграли ${prize.toFixed(2)} TON!`);
-                    } else {
-                        alert("Победа за игроком #429");
-                    }
+                wheel.style.transform = 'rotate(-90deg)';
+                setTimeout(() => wheel.style.transition = 'transform 5s cubic-bezier(0.15, 0, 0.15, 1)', 100);
+                if (data.winner.id === myId) {
+                    balance += data.prize;
                 }
-                
-                currentBet = 0;
-                totalPot = 0;
-                document.getElementById('player-sector').setAttribute('stroke-dasharray', `0 283`);
-                updateUI();
             }, 5500);
         }
 
-        // Переключение вкладок
-        function showGame() {
-            document.getElementById('game-ui').classList.remove('hidden');
-            document.getElementById('content').classList.add('hidden');
+        function updateHistory(list) {
+            const container = document.getElementById('history-list');
+            container.innerHTML = list.map(h => `<div style="padding:10px; border-bottom:1px solid #333">${h.winner} выиграл ${h.pot} TON</div>`).join('');
         }
 
-        function showInventory() {
-            document.getElementById('game-ui').classList.add('hidden');
-            document.getElementById('content').classList.remove('hidden');
-            const c = document.getElementById('content');
-            c.innerHTML = '<h2>Инвентарь</h2>';if(inventory.length === 0) c.innerHTML += '<p>Пусто</p>';
-            inventory.forEach(i => c.innerHTML += `<div style="padding:10px; background:#1a1d23; margin-bottom:5px; border-radius:10px">${i}</div>`);
-            lucide.createIcons();
+        // Навигация
+        function showSubMenu(type) {
+            document.getElementById('main-menu').classList.add('hidden');
+            document.getElementById(`${type}-menu`).classList.remove('hidden');
+        }
+        function backToMenu() {
+            document.querySelectorAll('.menu-grid, #roulette-game').forEach(el => el.classList.add('hidden'));
+            document.getElementById('main-menu').classList.remove('hidden');
+        }
+        function startRoulette() {
+            document.getElementById('pvp-menu').classList.add('hidden');
+            document.getElementById('roulette-game').classList.remove('hidden');
+        }
+        function toggleHistory() {
+            const m = document.getElementById('history-modal');
+            m.style.display = m.style.display === 'block' ? 'none' : 'block';
         }
 
-        function showShop() {
-            document.getElementById('game-ui').classList.add('hidden');
-            document.getElementById('content').classList.remove('hidden');
-            document.getElementById('content').innerHTML = `
-                <h2>Магазин</h2>
-                <div onclick="buy('VIP Скин')" style="padding:15px; background:var(--primary); border-radius:10px; text-align:center">Купить VIP Скин (10 TON)</div>
-            `;
-        }
-
-        function buy(item) {
-            if(balance >= 10) {
-                balance -= 10;
-                inventory.push(item);
-                updateUI();
-                alert("Куплено!");
-            }
-        }
-
-        window.onload = () => {
-            lucide.createIcons();
-            startTimer();
-            updateUI();
-        };
+        window.onload = () => { lucide.createIcons(); connect(); };
     </script>
 </body>
 </html>
+
