@@ -1,4 +1,5 @@
-fastapi
-uvicorn
-aiogram
-python-multipart
+    fastapi
+    uvicorn
+    aiogram
+    python-multipart
+    websockets
